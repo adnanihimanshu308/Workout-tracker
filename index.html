@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#1C1E22" />
+<title>Workout Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  :root {
+    --bg:#1C1E22; --surface:#25282D; --surface-2:#2E3136; --border:#3A3D43;
+    --accent:#C08A3E; --done:#6B9080; --text:#EDEAE3; --text-muted:#96938E;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; background:var(--bg); }
+  body { font-family:'Inter',sans-serif; color:var(--text); min-height:100vh; }
+  #root { max-width:480px; margin:0 auto; padding-bottom:84px; position:relative; min-height:100vh; }
+  h1,h2,.eyebrow,.daypill-label,.tabbtn span,.card-title,.sectionlabel { font-family:'Oswald',sans-serif; }
+  .mono { font-family:'IBM Plex Mono',monospace; }
+  .header { padding:20px 18px 12px; }
+  .eyebrow { font-size:11px; letter-spacing:2px; color:var(--accent); text-transform:uppercase; font-weight:600; margin-bottom:2px; }
+  .weeknav { display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
+  .weeknav h1 { font-size:22px; font-weight:600; margin:0; letter-spacing:0.5px; }
+  .navbtn { background:var(--surface); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }
+  .daystrip { display:flex; justify-content:space-between; padding:14px 18px 6px; gap:4px; }
+  .daypill { background:none; border:none; color:var(--text-muted); display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:2px; flex:1; }
+  .daypill-ring { position:relative; display:flex; align-items:center; justify-content:center; }
+  .daypill-num { position:absolute; font-size:12px; font-weight:600; color:var(--text); font-family:'IBM Plex Mono',monospace; }
+  .daypill-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; }
+  .daypill.active .daypill-label { color:var(--accent); font-weight:700; }
+  .daypill.active .daypill-num { color:var(--accent); }
+  .focusbar { padding:8px 18px 14px; }
+  .focusbar h2 { font-size:19px; margin:0 0 2px; font-weight:600; }
+  .focusbar .sub { font-size:13px; color:var(--text-muted); }
+  .sectionlabel { padding:4px 18px 10px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-weight:600; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 14px 10px; margin:0 18px 14px; }
+  .card-title-row { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .card-title { font-size:15px; font-weight:600; letter-spacing:0.2px; }
+  .card-target { font-size:12px; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:1px; }
+  .card-last { font-size:11.5px; color:var(--text-muted); margin:8px 0 10px; line-height:1.5; }
+  .setrow { display:grid; grid-template-columns:20px 1fr 1fr; gap:8px; align-items:center; margin-bottom:6px; }
+  .setrow-header { color:var(--text-muted); font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .setrow-num { color:var(--text-muted); font-size:12px; font-family:'IBM Plex Mono',monospace; text-align:center; }
+  .setrow-input { background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 6px; font-size:14px; width:100%; font-family:'IBM Plex Mono',monospace; text-align:center; }
+  .setrow-input.filled { border-color:var(--done); }
+  .setrow-input:disabled { opacity:0.35; }
+  .swap-select { background:var(--surface-2); border:1px solid var(--border); color:var(--text-muted); border-radius:8px; padding:4px 6px; font-size:11px; font-family:'Inter',sans-serif; max-width:130px; }
+  .extrarow { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 16px; margin:0 18px 12px; }
+  .extrarow-top { display:flex; align-items:center; justify-content:space-between; }
+  .extrarow-label { display:flex; align-items:center; gap:10px; font-size:14px; }
+  .extrarow-sub { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+  .extrarow-controls { display:flex; gap:8px; margin-top:12px; }
+  .cardioselect { flex:2; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 8px; font-size:13px; }
+  .cardiomin { flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 6px; font-size:13px; text-align:center; font-family:'IBM Plex Mono',monospace; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--border); display:inline-block; }
+  .dot.on { background:var(--done); }
+  .addrow { margin:0 18px 18px; display:flex; gap:8px; }
+  .addselect { flex:1; background:var(--surface); border:1px dashed var(--border); color:var(--text-muted); border-radius:10px; padding:11px; font-size:13px; }
+  .addbtn { background:var(--accent); border:none; color:#20160A; font-weight:700; border-radius:10px; padding:0 16px; font-size:13px; cursor:pointer; }
+  .savebar { position:fixed; left:0; right:0; bottom:58px; display:flex; justify-content:center; pointer-events:none; z-index:5; }
+  .savechip { pointer-events:none; background:var(--surface); border:1px solid var(--border); color:var(--text-muted); font-size:11px; padding:5px 14px; border-radius:20px; letter-spacing:0.5px; }
+  .savechip.saved { color:var(--done); border-color:var(--done); }
+  .tabbar { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; display:flex; background:var(--surface); border-top:1px solid var(--border); z-index:10; }
+  .tabbtn { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 14px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:19px; }
+  .tabbtn.active { color:var(--accent); }
+  .tabbtn span { font-size:11px; letter-spacing:1px; text-transform:uppercase; font-weight:600; }
+  .rest-msg { margin:30px 18px; text-align:center; color:var(--text-muted); padding:40px 20px; border:1px dashed var(--border); border-radius:14px; }
+  .rest-msg b { color:var(--text); display:block; font-size:16px; margin-bottom:4px; font-family:'Oswald',sans-serif; }
+  .progress-wrap { padding:18px; }
+  .exselect { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px; border-radius:10px; font-size:14px; margin-bottom:18px; }
+  .trend { display:flex; align-items:flex-end; gap:7px; height:80px; margin:14px 0 22px; padding:0 2px; }
+  .trendbar-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
+  .trendbar { width:100%; max-width:22px; background:var(--accent); border-radius:4px 4px 2px 2px; }
+  .trendbar-label { font-size:9px; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; }
+  .session-row { border-bottom:1px solid var(--border); padding:12px 2px; }
+  .session-date { font-size:12px; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-bottom:4px; font-weight:600; }
+  .session-sets { font-size:13.5px; }
+  .empty-note { color:var(--text-muted); font-size:13px; padding:30px 10px; text-align:center; line-height:1.6; }
+  .assumption { margin:0 18px 16px; font-size:11px; color:var(--text-muted); line-height:1.5; padding:10px 12px; background:var(--surface-2); border-radius:10px; }
+  .banner { margin:14px 18px; padding:12px 14px; border-radius:10px; font-size:12px; line-height:1.5; }
+  .banner.err { background:#3A2020; border:1px solid #6B3030; color:#E8B4B4; }
+  select, input { font-family:inherit; }
+  ::placeholder { color:var(--text-muted); opacity:0.6; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React + Babel from CDN — no build step, works straight from GitHub Pages -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+// =====================================================================
+// >>> EDIT THIS after you deploy the Apps Script Web App <<<
+// =====================================================================
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+const CARDIO_OPTIONS = [
+  "Incline Treadmill Walk", "Stationary Cycling", "Elliptical",
+  "Outdoor Walk / Jog", "Rowing Machine", "Stairmaster", "Other",
+];
+
+const SCHEDULE = [
+  { day: "Monday", short: "Mo", focus: "Day 1 · Push", sub: "Chest, Shoulders, Triceps", rest: false, hasCardio: false, dayLabel: "Day 1 - Push",
+    exercises: [
+      { name: "Machine Chest Press", target: "3 × 10–12" },
+      { name: "Incline Chest Press", target: "3 × 10–12" },
+      { name: "Seated Shoulder Press (Machine)", target: "3 × 10–12" },
+      { name: "Lateral Raise (Dumbbell)", target: "3 × 12–15" },
+      { name: "Triceps Rope Pushdown", target: "3 × 12–15" },
+    ] },
+  { day: "Tuesday", short: "Tu", focus: "Day 2 · Pull", sub: "Back, Rear Delts, Biceps", rest: false, hasCardio: false, dayLabel: "Day 2 - Pull",
+    exercises: [
+      { name: "Lat Pulldown (Wide Grip)", target: "3 × 10–12" },
+      { name: "Seated Cable Row", target: "3 × 10–12" },
+      { name: "Face Pull", target: "3 × 15" },
+      { name: "Dumbbell Bicep Curl", target: "3 × 12" },
+      { name: "Hammer Curl", target: "3 × 12" },
+    ] },
+  { day: "Wednesday", short: "We", focus: "Day 3 · Legs", sub: "Quads, Glutes, Hamstrings", rest: false, hasCardio: false, dayLabel: "Day 3 - Legs",
+    exercises: [
+      { name: "Leg Press", target: "3 × 12–15" },
+      { name: "Goblet Squat", target: "3 × 12–15" },
+      { name: "Hip Thrust", target: "3 × 12–15" },
+      { name: "Seated Leg Curl", target: "3 × 12–15" },
+      { name: "Leg Extension", target: "3 × 12–15" },
+    ] },
+  { day: "Thursday", short: "Th", focus: "Rest", sub: "No gym day", rest: true, hasCardio: false, dayLabel: "", exercises: [] },
+  { day: "Friday", short: "Fr", focus: "Rest", sub: "No gym day", rest: true, hasCardio: false, dayLabel: "", exercises: [] },
+  { day: "Saturday", short: "Sa", focus: "Day 4 · Upper Complete", sub: "+ Forearms, Abs, Cardio", rest: false, hasCardio: true, dayLabel: "Day 4 - Upper",
+    cardioSuggested: "Incline walk, cycling, or elliptical, 15–20 min",
+    exercises: [
+      { name: "Machine Chest Press", target: "3 × 10–12" },
+      { name: "Lat Pulldown (Wide Grip)", target: "3 × 10–12" },
+      { name: "Seated Cable Row", target: "3 × 10–12" },
+      { name: "Seated Shoulder Press (Machine)", target: "3 × 10–12" },
+      { name: "Face Pull", target: "3 × 15" },
+      { name: "Dumbbell Bicep Curl", target: "3 × 12" },
+      { name: "Triceps Rope Pushdown", target: "3 × 12–15" },
+      { name: "Seated Wrist Curl", target: "3 × 15–20" },
+      { name: "Seated Reverse Wrist Curl", target: "3 × 15–20" },
+      { name: "Cable Crunch", target: "3 × 15–20", abs: true },
+      { name: "Pallof Press", target: "3 × 10–12/side", abs: true },
+    ] },
+  { day: "Sunday", short: "Su", focus: "Day 5 · Lower Complete", sub: "+ Calves, Abs, Cardio", rest: false, hasCardio: true, dayLabel: "Day 5 - Lower",
+    cardioSuggested: "Elliptical, cycling, or incline walk, 15–20 min",
+    exercises: [
+      { name: "Leg Press", target: "3 × 12–15" },
+      { name: "Goblet Squat", target: "3 × 12–15" },
+      { name: "Hip Thrust", target: "3 × 12–15" },
+      { name: "Seated Leg Curl", target: "3 × 12–15" },
+      { name: "Cable Pull-Through", target: "3 × 12–15" },
+      { name: "Leg Extension", target: "3 × 12–15" },
+      { name: "Standing Calf Raise", target: "3 × 15–20" },
+      { name: "Seated Calf Raise", target: "3 × 15–20" },
+      { name: "Dead Bug", target: "3 × 10/side", hold: true, abs: true },
+      { name: "Side Plank", target: "3 × 20–30 sec/side", hold: true, abs: true },
+    ] },
+];
+
+const HOLD_EXERCISES = new Set(["Dead Bug", "Side Plank", "Plank"]);
+
+// ---------------------------------------------------------------------
+// API helpers — POST uses text/plain to dodge Apps Script's CORS preflight
+// ---------------------------------------------------------------------
+async function apiGet(action) {
+  const res = await fetch(`${API_URL}?action=${action}`);
+  return res.json();
+}
+async function apiPost(payload) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+// ---------------------------------------------------------------------
+// date helpers
+// ---------------------------------------------------------------------
+function toKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function getWeekStart(date) { const d=new Date(date); const dow=d.getDay(); d.setDate(d.getDate()+(dow===0?-6:1-dow)); d.setHours(0,0,0,0); return d; }
+function addDays(date,n){ const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function fmtRange(ws){ const e=addDays(ws,6); const o={month:"short",day:"numeric"}; return `${ws.toLocaleDateString("en-US",o)} – ${e.toLocaleDateString("en-US",o)}`; }
+function fmtShort(k){ const d=new Date(k+"T00:00:00"); return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function blankSet(){ return { weight:"", reps:"" }; }
+
+// ---------------------------------------------------------------------
+// small UI atoms
+// ---------------------------------------------------------------------
+function PlateRing({ pct, active, label, sub, onClick, rest }) {
+  const size=46, stroke=3, r=(size-stroke)/2, c=2*Math.PI*r, offset=c*(1-Math.min(1,pct));
+  return (
+    <button onClick={onClick} className={"daypill" + (active?" active":"")}>
+      <span className="daypill-ring" style={{width:size,height:size}}>
+        <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+          <circle cx={size/2} cy={size/2} r={r} stroke="var(--border)" strokeWidth={stroke} fill="none" />
+          {!rest && <circle cx={size/2} cy={size/2} r={r} stroke="var(--done)" strokeWidth={stroke} fill="none"
+            strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" style={{transition:"stroke-dashoffset .35s ease"}} />}
+        </svg>
+        <span className="daypill-num">{rest?"–":sub}</span>
+      </span>
+      <span className="daypill-label">{label}</span>
+    </button>
+  );
+}
+
+function SetRow({ idx, value, hold, onChange }) {
+  const filled = !!value.reps;
+  return (
+    <div className="setrow">
+      <span className="setrow-num">{idx+1}</span>
+      <input type="number" inputMode="decimal" placeholder={hold?"—":"kg"} disabled={hold}
+        className={"setrow-input" + (filled && !hold ? " filled":"")}
+        value={value.weight} onChange={e=>onChange({...value, weight:e.target.value})} />
+      <input type="number" inputMode="numeric" placeholder={hold?"sec":"reps"}
+        className={"setrow-input" + (filled ? " filled":"")}
+        value={value.reps} onChange={e=>onChange({...value, reps:e.target.value})} />
+    </div>
+  );
+}
+
+function ExerciseCard({ num, name, target, hold, sets, lastTime, dirty, onSetChange, onSwap, allExerciseNames, swappable }) {
+  return (
+    <div className="card">
+      <div className="card-title-row">
+        <div>
+          <div className="card-title">{num}. {name}</div>
+          <div className="card-target">{target}</div>
+        </div>
+        {swappable && (
+          <select className="swap-select" value={name} onChange={e=>onSwap(e.target.value)}>
+            <option value={name}>{name}</option>
+            {allExerciseNames.filter(n=>n!==name).map(n=><option key={n} value={n}>{n}</option>)}
+          </select>
+        )}
+      </div>
+      <div className="card-last">
+        {lastTime
+          ? <>Last time ({fmtShort(lastTime.date)}): {lastTime.sets.filter(s=>s.reps).map((s,i,arr)=>(
+              <span key={i}>{s.weight?`${s.weight}kg×${s.reps}`:`${s.reps}s`}{i<arr.length-1?", ":""}</span>
+            ))}{dirty && <span style={{color:"var(--accent)"}}> · saving…</span>}</>
+          : (dirty ? "Saving…" : "No previous log yet — this'll show up next time.")}
+      </div>
+      <div className="setrow setrow-header"><span></span><span>{hold?"":"weight"}</span><span>{hold?"duration":"reps"}</span></div>
+      {sets.map((s,i)=>(
+        <SetRow key={i} idx={i} value={s} hold={hold} onChange={val=>onSetChange(i,val)} />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// main app
+// ---------------------------------------------------------------------
+function App() {
+  const today = new Date();
+  const todayKey = toKey(today);
+  const todayDow = (today.getDay()+6)%7;
+
+  const [weekStart, setWeekStart] = useState(getWeekStart(today));
+  const [selectedIdx, setSelectedIdx] = useState(todayDow);
+  const [rawLogs, setRawLogs] = useState([]);
+  const [rawCardio, setRawCardio] = useState([]);
+  const [allExercises, setAllExercises] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [tab, setTab] = useState("today");
+  const [progressName, setProgressName] = useState("Machine Chest Press");
+  const [dirtyKeys, setDirtyKeys] = useState({});
+  const [extraByDate, setExtraByDate] = useState({});
+  const [addSelect, setAddSelect] = useState("");
+
+  const dayEntry = SCHEDULE[selectedIdx];
+  const selectedDate = addDays(weekStart, selectedIdx);
+  const selectedKey = toKey(selectedDate);
+
+  const configured = API_URL && !API_URL.startsWith("PASTE_");
+
+  const refresh = useCallback(async () => {
+    if (!configured) { setLoaded(true); return; }
+    try {
+      setLoadError(null);
+      const [logs, cardio, exercises] = await Promise.all([
+        apiGet("getAllLogs"), apiGet("getAllCardio"), apiGet("getExercises"),
+      ]);
+      if (logs && logs.error) throw new Error(logs.error);
+      setRawLogs(Array.isArray(logs) ? logs : []);
+      setRawCardio(Array.isArray(cardio) ? cardio : []);
+      setAllExercises(Array.isArray(exercises) ? exercises : []);
+    } catch (err) {
+      setLoadError(String(err.message || err));
+    }
+    setLoaded(true);
+  }, [configured]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const allExerciseNames = useMemo(() => allExercises.map(e => e.name), [allExercises]);
+
+  // group logs by date -> exercise -> row
+  const logsByDate = useMemo(() => {
+    const map = {};
+    rawLogs.forEach(r => {
+      if (!map[r.date]) map[r.date] = {};
+      map[r.date][r.exercise] = r;
+    });
+    return map;
+  }, [rawLogs]);
+  const cardioByDate = useMemo(() => {
+    const map = {};
+    rawCardio.forEach(r => { map[r.date] = r; });
+    return map;
+  }, [rawCardio]);
+
+  // exercises to show today = schedule defaults + any logged "extras" not in the default list
+  const defaultNames = useMemo(() => dayEntry.exercises.map(e => e.name), [dayEntry]);
+  const todaysExtraLogged = useMemo(() => {
+    const logged = logsByDate[selectedKey] || {};
+    return Object.keys(logged).filter(n => !defaultNames.includes(n));
+  }, [logsByDate, selectedKey, defaultNames]);
+  const manualExtras = extraByDate[selectedKey] || [];
+  const extraNames = useMemo(() => Array.from(new Set([...todaysExtraLogged, ...manualExtras])), [todaysExtraLogged, manualExtras]);
+
+  const rowFor = (name) => (logsByDate[selectedKey] || {})[name];
+  const [pendingEdits, setPendingEdits] = useState({}); // key: `${date}|${exercise}` -> draft sets array, source of truth while typing
+  const setsFor = (name) => {
+    const key = `${selectedKey}|${name}`;
+    if (pendingEdits[key]) return pendingEdits[key];
+    const row = rowFor(name);
+    if (!row) return [blankSet(), blankSet(), blankSet()];
+    return [
+      { weight: row.s1w ?? "", reps: row.s1r ?? "" },
+      { weight: row.s2w ?? "", reps: row.s2r ?? "" },
+      { weight: row.s3w ?? "", reps: row.s3r ?? "" },
+    ];
+  };
+
+  const saveTimers = useRef({});
+  const saveExercise = useCallback((name, sets) => {
+    const key = `${selectedKey}|${name}`;
+    setPendingEdits(p => ({ ...p, [key]: sets })); // commit the keystroke locally right away
+    setDirtyKeys(p => ({ ...p, [key]: true }));
+    clearTimeout(saveTimers.current[key]);
+    saveTimers.current[key] = setTimeout(async () => {
+      const payload = {
+        action: "saveLogEntry", date: selectedKey, dayLabel: dayEntry.dayLabel, exercise: name,
+        s1w: sets[0].weight, s1r: sets[0].reps, s2w: sets[1].weight, s2r: sets[1].reps,
+        s3w: sets[2].weight, s3r: sets[2].reps,
+      };
+      try {
+        await apiPost(payload);
+        setRawLogs(prev => {
+          const next = prev.filter(r => !(r.date === selectedKey && r.exercise === name));
+          next.push({ date: selectedKey, dayLabel: dayEntry.dayLabel, exercise: name, ...payload });
+          return next;
+        });
+      } catch (e) { /* leave dirty flag off silently; user can retry by editing again */ }
+      setDirtyKeys(p => { const n = { ...p }; delete n[key]; return n; });
+    }, 700);
+  }, [selectedKey, dayEntry]);
+
+  const cardioRow = cardioByDate[selectedKey];
+  const [cardioLocal, setCardioLocal] = useState({ type: "", minutes: "" });
+  useEffect(() => {
+    setCardioLocal({ type: cardioRow?.cardioType || "", minutes: cardioRow?.minutes || "" });
+  }, [selectedKey, cardioRow]);
+  const cardioTimer = useRef(null);
+  const saveCardio = useCallback((next) => {
+    setCardioLocal(next);
+    setDirtyKeys(p => ({ ...p, cardio: true }));
+    clearTimeout(cardioTimer.current);
+    cardioTimer.current = setTimeout(async () => {
+      const payload = { action: "saveCardioEntry", date: selectedKey, dayLabel: dayEntry.dayLabel, cardioType: next.type, minutes: next.minutes };
+      try {
+        await apiPost(payload);
+        setRawCardio(prev => {
+          const filtered = prev.filter(r => r.date !== selectedKey);
+          filtered.push({ date: selectedKey, dayLabel: dayEntry.dayLabel, cardioType: next.type, minutes: next.minutes });
+          return filtered;
+        });
+      } catch (e) {}
+      setDirtyKeys(p => { const n = { ...p }; delete n.cardio; return n; });
+    }, 700);
+  }, [selectedKey, dayEntry]);
+
+  function lastTimeFor(name) {
+    const rows = rawLogs.filter(r => r.exercise === name && r.date !== selectedKey && (r.s1r || r.s2r || r.s3r))
+      .sort((a,b) => b.date.localeCompare(a.date));
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { date: r.date, sets: [{weight:r.s1w,reps:r.s1r},{weight:r.s2w,reps:r.s2r},{weight:r.s3w,reps:r.s3r}] };
+  }
+
+  function dayCompletionPct(dateKey, entry) {
+    if (entry.rest) return 0;
+    const logged = logsByDate[dateKey] || {};
+    const names = entry.exercises.map(e => e.name);
+    let doneCount = 0;
+    names.forEach(n => { const r = logged[n]; if (r && (r.s1r || r.s2r || r.s3r)) doneCount++; });
+    const total = names.length + (entry.hasCardio ? 1 : 0);
+    if (entry.hasCardio && cardioByDate[dateKey] && cardioByDate[dateKey].cardioType) doneCount++;
+    return total ? doneCount/total : 0;
+  }
+
+  // ---- progress tab ----
+  const progressSessions = useMemo(() => {
+    return rawLogs.filter(r => r.exercise === progressName && (r.s1r || r.s2r || r.s3r))
+      .map(r => {
+        const sets = [{weight:r.s1w,reps:r.s1r},{weight:r.s2w,reps:r.s2r},{weight:r.s3w,reps:r.s3r}].filter(s=>s.reps);
+        const top = Math.max(0, ...sets.map(s => Number(s.weight || s.reps) || 0));
+        return { date: r.date, sets, top };
+      }).sort((a,b) => a.date.localeCompare(b.date));
+  }, [rawLogs, progressName]);
+  const trendBars = progressSessions.slice(-8);
+  const maxTrend = Math.max(1, ...trendBars.map(s => s.top));
+
+  function addExtraExercise() {
+    if (!addSelect) return;
+    setExtraByDate(prev => {
+      const cur = prev[selectedKey] || [];
+      if (cur.includes(addSelect) || defaultNames.includes(addSelect)) return prev;
+      return { ...prev, [selectedKey]: [...cur, addSelect] };
+    });
+    setAddSelect("");
+  }
+
+  return (
+    <div>
+      <div className="header">
+        <div className="eyebrow">Workout Log</div>
+        <div className="weeknav">
+          <h1>{fmtRange(weekStart)}</h1>
+          <div style={{display:"flex",gap:8}}>
+            <button className="navbtn" onClick={()=>setWeekStart(w=>addDays(w,-7))}>‹</button>
+            <button className="navbtn" onClick={()=>setWeekStart(w=>addDays(w,7))}>›</button>
+          </div>
+        </div>
+      </div>
+
+      {!configured && (
+        <div className="banner err">
+          <b>Not connected yet.</b> Open this file and set <code>API_URL</code> to your deployed Apps Script Web App URL (see the setup notes). Everything below will work once that's set.
+        </div>
+      )}
+      {configured && loadError && (
+        <div className="banner err">Couldn't reach the sheet: {loadError}. Check the deployment is set to "Anyone" access and the URL is correct.</div>
+      )}
+
+      <div className="daystrip">
+        {SCHEDULE.map((d,i) => {
+          const key = toKey(addDays(weekStart,i));
+          return <PlateRing key={d.day} label={d.short} active={i===selectedIdx} rest={d.rest}
+            sub={d.rest?"–":new Date(addDays(weekStart,i)).getDate()}
+            pct={dayCompletionPct(key,d)} onClick={()=>setSelectedIdx(i)} />;
+        })}
+      </div>
+
+      {selectedIdx===0 && (
+        <div className="assumption">Mapped as Mon/Tue/Wed = Day 1/2/3, Thu/Fri = rest, Sat/Sun = Day 4/5. Log against whichever pill matches the session you actually did if your real gym days differ.</div>
+      )}
+
+      {tab==="today" && (
+        <>
+          <div className="focusbar">
+            <h2>{dayEntry.rest ? "Rest Day" : dayEntry.focus}</h2>
+            <div className="sub">{dayEntry.sub}{selectedKey===todayKey ? " · Today" : ""}</div>
+          </div>
+
+          {dayEntry.rest ? (
+            <div className="rest-msg"><b>No gym today</b>Recovery is part of the plan.</div>
+          ) : !loaded ? (
+            <div className="empty-note">Loading…</div>
+          ) : (
+            <>
+              {dayEntry.exercises.filter(e=>!e.abs).map((e,i) => (
+                <ExerciseCard key={e.name} num={i+1} name={e.name} target={e.target} hold={HOLD_EXERCISES.has(e.name)}
+                  sets={setsFor(e.name)} lastTime={lastTimeFor(e.name)} dirty={!!dirtyKeys[`${selectedKey}|${e.name}`]}
+                  onSetChange={(idx,val)=>{ const s=setsFor(e.name); s[idx]=val; saveExercise(e.name,s); }}
+                  swappable={false} allExerciseNames={allExerciseNames} />
+              ))}
+
+              {dayEntry.exercises.some(e=>e.abs) && (
+                <>
+                  <div className="sectionlabel">Abs</div>
+                  {dayEntry.exercises.filter(e=>e.abs).map((e,i) => (
+                    <ExerciseCard key={e.name} num={String.fromCharCode(65+i)} name={e.name} target={e.target} hold={HOLD_EXERCISES.has(e.name)}
+                      sets={setsFor(e.name)} lastTime={lastTimeFor(e.name)} dirty={!!dirtyKeys[`${selectedKey}|${e.name}`]}
+                      onSetChange={(idx,val)=>{ const s=setsFor(e.name); s[idx]=val; saveExercise(e.name,s); }}
+                      swappable={false} allExerciseNames={allExerciseNames} />
+                  ))}
+                </>
+              )}
+
+              {extraNames.length > 0 && (
+                <>
+                  <div className="sectionlabel">Added Today</div>
+                  {extraNames.map((name,i) => (
+                    <ExerciseCard key={name} num={"+"} name={name} target="Your own — no fixed target" hold={HOLD_EXERCISES.has(name)}
+                      sets={setsFor(name)} lastTime={lastTimeFor(name)} dirty={!!dirtyKeys[`${selectedKey}|${name}`]}
+                      onSetChange={(idx,val)=>{ const s=setsFor(name); s[idx]=val; saveExercise(name,s); }}
+                      swappable={true} allExerciseNames={allExerciseNames}
+                      onSwap={(newName)=>{
+                        setExtraByDate(prev=>{
+                          const cur=(prev[selectedKey]||[]).map(n=>n===name?newName:n);
+                          return {...prev,[selectedKey]:cur};
+                        });
+                      }} />
+                  ))}
+                </>
+              )}
+
+              <div className="addrow">
+                <select className="addselect" value={addSelect} onChange={e=>setAddSelect(e.target.value)}>
+                  <option value="">+ Add or swap in an exercise…</option>
+                  {allExerciseNames.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <button className="addbtn" onClick={addExtraExercise}>Add</button>
+              </div>
+
+              {dayEntry.hasCardio && (
+                <div className="extrarow">
+                  <div className="extrarow-top">
+                    <div>
+                      <div className="extrarow-label">🔥 Cardio</div>
+                      <div className="extrarow-sub">{dayEntry.cardioSuggested}</div>
+                    </div>
+                    <span className={"dot" + (cardioLocal.type ? " on":"")}></span>
+                  </div>
+                  <div className="extrarow-controls">
+                    <select className="cardioselect" value={cardioLocal.type}
+                      onChange={e=>saveCardio({...cardioLocal, type:e.target.value})}>
+                      <option value="">What did you do?</option>
+                      {CARDIO_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <input className="cardiomin" type="number" inputMode="numeric" placeholder="min"
+                      value={cardioLocal.minutes} onChange={e=>saveCardio({...cardioLocal, minutes:e.target.value})} />
+                  </div>
+                </div>
+              )}
+
+              <div className="savebar">
+                <span className={"savechip" + (Object.keys(dirtyKeys).length ? "" : " saved")}>
+                  {Object.keys(dirtyKeys).length ? "Saving…" : "Saved"}
+                </span>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {tab==="progress" && (
+        <div className="progress-wrap">
+          <select className="exselect" value={progressName} onChange={e=>setProgressName(e.target.value)}>
+            {allExerciseNames.length ? allExerciseNames.map(n=><option key={n} value={n}>{n}</option>)
+              : <option value={progressName}>{progressName}</option>}
+          </select>
+
+          {trendBars.length > 0 && (
+            <div className="trend">
+              {trendBars.map((s,i) => (
+                <div className="trendbar-wrap" key={i}>
+                  <div className="trendbar" style={{height:`${Math.max(10,(s.top/maxTrend)*70)}px`}} title={`${fmtShort(s.date)}: ${s.top}`} />
+                  <div className="trendbar-label">{fmtShort(s.date).slice(0,6)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {progressSessions.length===0 ? (
+            <div className="empty-note">No logs yet for {progressName}.<br/>Log a set on the Today tab and it'll show up here.</div>
+          ) : (
+            [...progressSessions].reverse().map((s,i) => (
+              <div className="session-row" key={i}>
+                <div className="session-date">{fmtShort(s.date)}{i===0?" · Most recent":""}</div>
+                <div className="session-sets mono">
+                  {s.sets.map((set,j)=>(
+                    <span key={j}>{set.weight?`${set.weight}kg × ${set.reps}`:`${set.reps}s hold`}{j<s.sets.length-1?"  ·  ":""}</span>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div className="tabbar">
+        <button className={"tabbtn"+(tab==="today"?" active":"")} onClick={()=>setTab("today")}>🏋️<span>Today</span></button>
+        <button className={"tabbtn"+(tab==="progress"?" active":"")} onClick={()=>setTab("progress")}>📈<span>Progress</span></button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
